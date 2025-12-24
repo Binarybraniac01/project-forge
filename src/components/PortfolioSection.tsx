@@ -1,5 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useState, useEffect } from "react";
 import projectImage1 from "@/assets/project-dashboard-1.png";
 import projectImage2 from "@/assets/project-dashboard-2.png";
 import projectImage3 from "@/assets/project-dashboard-3.png";
@@ -50,6 +52,20 @@ const projects = [
 ];
 
 const PortfolioSection = () => {
+  const isMobile = useIsMobile();
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Auto-advance cards on mobile every 5 seconds
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % projects.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isMobile]);
+
   return (
     <section id="portfolio" className="py-16 sm:py-20 lg:py-24 overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6">
@@ -63,55 +79,108 @@ const PortfolioSection = () => {
         </div>
       </div>
 
-      {/* Marquee Container */}
-      <div className="relative">
-        {/* Gradient Overlays */}
-        <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
-
-        {/* Scrolling Cards */}
-        <div className="flex animate-marquee-slow hover:[animation-play-state:paused]">
-          {[...projects, ...projects].map((project, index) => (
-            <Card
-              key={`${project.id}-${index}`}
-              className="group glass-card overflow-hidden hover:border-primary/40 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer flex-shrink-0 w-[320px] sm:w-[380px] mx-3 sm:mx-4"
-            >
-              {/* Image Container - 16:9 aspect ratio */}
-              <div className="relative aspect-video overflow-hidden">
-                <img
-                  src={project.image}
-                  alt={project.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-end p-4">
-                  <ExternalLink className="text-primary" size={20} />
+      {/* Mobile: Single card slideshow */}
+      {isMobile ? (
+        <div className="container mx-auto px-4">
+          <div className="relative">
+            {projects.map((project, index) => (
+              <Card
+                key={project.id}
+                className={`glass-card overflow-hidden transition-all duration-500 ${
+                  index === currentIndex
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 absolute inset-0 translate-x-full pointer-events-none"
+                }`}
+              >
+                <div className="relative aspect-video overflow-hidden">
+                  <img
+                    src={project.image}
+                    alt={project.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end justify-end p-4">
+                    <ExternalLink className="text-primary" size={20} />
+                  </div>
                 </div>
-              </div>
 
-              <CardContent className="p-4 sm:p-6">
-                <h3 className="text-lg sm:text-xl font-bold mb-2 text-foreground group-hover:text-primary transition-colors">
-                  {project.title}
-                </h3>
-                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                  {project.description}
-                </p>
-                
-                {/* Tech Tags */}
-                <div className="flex flex-wrap gap-2">
-                  {project.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="tech-badge"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                <CardContent className="p-4">
+                  <h3 className="text-lg font-bold mb-2 text-foreground">
+                    {project.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                    {project.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {project.tags.map((tag) => (
+                      <span key={tag} className="tech-badge">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Dot indicators */}
+          <div className="flex justify-center gap-2 mt-6">
+            {projects.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  index === currentIndex
+                    ? "bg-primary w-6"
+                    : "bg-muted-foreground/40"
+                }`}
+                aria-label={`Go to project ${index + 1}`}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Desktop/Tablet: Marquee scroll */
+        <div className="relative">
+          <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+
+          <div className="flex animate-marquee-slow hover:[animation-play-state:paused]">
+            {[...projects, ...projects].map((project, index) => (
+              <Card
+                key={`${project.id}-${index}`}
+                className="group glass-card overflow-hidden hover:border-primary/40 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer flex-shrink-0 w-[320px] sm:w-[380px] mx-3 sm:mx-4"
+              >
+                <div className="relative aspect-video overflow-hidden">
+                  <img
+                    src={project.image}
+                    alt={project.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-end p-4">
+                    <ExternalLink className="text-primary" size={20} />
+                  </div>
+                </div>
+
+                <CardContent className="p-4 sm:p-6">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2 text-foreground group-hover:text-primary transition-colors">
+                    {project.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                    {project.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {project.tags.map((tag) => (
+                      <span key={tag} className="tech-badge">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 };
